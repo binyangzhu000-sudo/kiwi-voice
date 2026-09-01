@@ -14,6 +14,7 @@ from kiwi.tts.elevenlabs import (
     DEFAULT_ELEVENLABS_MODEL_ID,
     DEFAULT_ELEVENLABS_STYLE_PRESETS,
 )
+from kiwi.tts.atlas_cloud import DEFAULT_ATLAS_VOICE_ID
 
 
 def load_config_yaml(config_path: str = "config.yaml") -> dict:
@@ -81,7 +82,7 @@ class KiwiConfig:
     ws_ping_timeout: float = 20.0
 
     # TTS settings
-    # provider: "qwen3" | "piper" | "elevenlabs" | "kokoro"
+    # provider: "qwen3" | "piper" | "elevenlabs" | "kokoro" | "atlas"
     # qwen backend: "runpod" | "local"
     tts_provider: str = "qwen3"
     tts_qwen_backend: str = "runpod"
@@ -115,6 +116,8 @@ class KiwiConfig:
             for style_name, style_values in DEFAULT_ELEVENLABS_STYLE_PRESETS.items()
         }
     )
+    tts_atlas_api_key: str = ""
+    tts_atlas_voice_id: str = DEFAULT_ATLAS_VOICE_ID
 
     # Kokoro TTS settings
     tts_kokoro_voice: str = "af_heart"
@@ -190,6 +193,7 @@ class KiwiConfig:
         stt_cfg = yaml_config.get("stt", {})
         tts_cfg = yaml_config.get("tts", {})
         eleven_cfg = tts_cfg.get("elevenlabs", {}) if isinstance(tts_cfg.get("elevenlabs", {}), dict) else {}
+        atlas_cfg = tts_cfg.get("atlas", {}) if isinstance(tts_cfg.get("atlas", {}), dict) else {}
         audio_cfg = yaml_config.get("audio", {})
         wake_cfg = yaml_config.get("wake_word", {})
         llm_cfg = yaml_config.get("llm", {})
@@ -226,6 +230,10 @@ class KiwiConfig:
         config.tts_local_tokenizer_path = tts_cfg.get("local_tokenizer_path", config.tts_local_tokenizer_path)
         config.tts_qwen_device = tts_cfg.get("qwen_device", config.tts_qwen_device)
         config.tts_piper_model_path = tts_cfg.get("piper_model_path", config.tts_piper_model_path)
+        config.tts_atlas_api_key = str(atlas_cfg.get("api_key", config.tts_atlas_api_key))
+        config.tts_atlas_voice_id = str(
+            atlas_cfg.get("voice_id", config.tts_atlas_voice_id)
+        ).strip() or DEFAULT_ATLAS_VOICE_ID
         # Kokoro TTS settings
         kokoro_cfg = tts_cfg.get("kokoro", {}) if isinstance(tts_cfg.get("kokoro"), dict) else {}
         config.tts_kokoro_voice = str(
@@ -572,6 +580,12 @@ class KiwiConfig:
             config.tts_elevenlabs_speed = float(os.getenv("KIWI_ELEVENLABS_SPEED"))
         if os.getenv("KIWI_ELEVENLABS_WS_STREAMING"):
             config.tts_elevenlabs_ws_streaming = os.getenv("KIWI_ELEVENLABS_WS_STREAMING").strip().lower() in ("true", "1", "yes")
+        config.tts_atlas_api_key = (
+            os.environ.get("ATLASCLOUD_API_KEY", "").strip()
+            or config.tts_atlas_api_key
+        )
+        if os.getenv("KIWI_ATLAS_VOICE_ID"):
+            config.tts_atlas_voice_id = os.getenv("KIWI_ATLAS_VOICE_ID").strip()
 
         provider_explicit = ("provider" in tts_cfg) or bool(os.getenv("KIWI_TTS_PROVIDER"))
         qwen_backend_explicit = ("qwen_backend" in tts_cfg) or bool(os.getenv("KIWI_QWEN_BACKEND"))
@@ -594,9 +608,11 @@ class KiwiConfig:
             "11labs": "elevenlabs",
             "kokoro_onnx": "kokoro",
             "kokoro-onnx": "kokoro",
+            "atlascloud": "atlas",
+            "atlas_cloud": "atlas",
         }
         config.tts_provider = provider_aliases.get(config.tts_provider, config.tts_provider)
-        if config.tts_provider not in {"qwen3", "piper", "elevenlabs", "kokoro"}:
+        if config.tts_provider not in {"qwen3", "piper", "elevenlabs", "kokoro", "atlas"}:
             kiwi_log("CONFIG", f"Unknown tts.provider='{config.tts_provider}', fallback to qwen3", level="WARNING")
             config.tts_provider = "qwen3"
         if config.tts_qwen_backend not in {"local", "runpod"}:
@@ -685,6 +701,10 @@ class KiwiConfig:
             tts_type = "ElevenLabs (cloud)"
             tts_model = self.tts_elevenlabs_model_id
             tts_voice = self.tts_elevenlabs_voice_id
+        elif self.tts_provider == "atlas":
+            tts_type = "Atlas Cloud xAI TTS v1"
+            tts_model = "xai/tts-v1"
+            tts_voice = self.tts_atlas_voice_id
         elif self.tts_provider == "qwen3" and self.tts_qwen_backend == "local":
             tts_type = f"Qwen3-TTS {self.tts_model_size} (local)"
             tts_model = self.tts_local_model_path or f"Qwen3-TTS-12Hz-{self.tts_model_size}-CustomVoice"

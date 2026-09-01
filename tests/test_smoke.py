@@ -42,6 +42,12 @@ def test_import_elevenlabs_tts():
     assert ElevenLabsTTSClient is not None
 
 
+def test_import_atlas_cloud_tts():
+    from kiwi.tts.atlas_cloud import AtlasCloudTTSClient, AtlasCloudTTSConfig
+    assert AtlasCloudTTSClient is not None
+    assert AtlasCloudTTSConfig is not None
+
+
 def test_import_qwen_local_tts():
     from kiwi.tts.qwen_local import LocalQwenTTSConfig
     from kiwi.tts.base import normalize_voice as normalize_qwen_voice, normalize_model_size as normalize_qwen_model_size
@@ -64,7 +70,7 @@ def test_kiwi_config_parsing():
     from kiwi.config_loader import KiwiConfig
     config = KiwiConfig()
     assert config.wake_word_keyword == "киви"
-    assert config.tts_provider in ("qwen3", "piper", "elevenlabs")
+    assert config.tts_provider in ("qwen3", "piper", "elevenlabs", "kokoro", "atlas")
 
 
 def test_kiwi_config_from_yaml():

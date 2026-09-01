@@ -36,7 +36,7 @@ Think of it as Alexa/Siri, but self-hosted, privacy-first, and plugged into your
 | 🗣️ **Wake Word** | Text-based fuzzy matching or **ML detection via OpenWakeWord** — low-latency ONNX model on raw audio (~2% CPU) |
 | 🎭 **Speaker ID** | Voiceprint recognition via pyannote embeddings — knows who's talking |
 | 🔐 **Voice Security** | Priority hierarchy (Owner → Friend → Guest → Blocked) with Telegram approval for dangerous commands |
-| 🔊 **Multi-Provider TTS** | ElevenLabs (cloud), Piper (local/free), Qwen3-TTS (local GPU / RunPod), **Kokoro ONNX** (local/free, 14 voices) |
+| 🔊 **Multi-Provider TTS** | ElevenLabs and Atlas Cloud (cloud), Piper and Kokoro (local/free), Qwen3-TTS (local GPU / RunPod) |
 | ⚡ **Streaming TTS** | Sentence-aware chunking — starts speaking before the LLM finishes |
 | 🛑 **Barge-In** | Interrupt the assistant mid-sentence by speaking over it |
 | 🧠 **Auto-Learning** | Automatically remembers new voices after first interaction |
@@ -95,7 +95,7 @@ Edit `config.yaml` to match your setup:
 # Language: controls UI strings, STT, TTS, wake word, and command patterns
 language: "ru"               # ru | en (add more in kiwi/locales/)
 
-# TTS provider: elevenlabs | piper | qwen3 | kokoro
+# TTS provider: elevenlabs | piper | qwen3 | kokoro | atlas
 tts:
   provider: "piper"          # Free, local, no API key needed
 
@@ -177,11 +177,13 @@ KIWI_STT_ENGINE=elevenlabs python -m kiwi
 | **Qwen3-TTS (RunPod)** | High | ~2–5s | ~$0.0003/sec | No |
 | **Kokoro ONNX** | High | <0.5s | Free | No |
 | **Piper** | Good | <0.5s | Free | No |
+| **Atlas Cloud xAI TTS v1** | Excellent | Async | Pay per use | No |
 
 Switch providers in `config.yaml` or via environment variable:
 
 ```bash
 KIWI_TTS_PROVIDER=kokoro python -m kiwi
+KIWI_TTS_PROVIDER=atlas ATLASCLOUD_API_KEY=... python -m kiwi
 ```
 
 > **Kokoro ONNX** — free, fully local TTS with 14 voices at 24kHz. Models auto-download on first use (~340MB). Supports English, Japanese, Chinese, Korean, and several European languages. Russian is not yet supported.
@@ -251,11 +253,12 @@ Set `KIWI_TELEGRAM_BOT_TOKEN` and `KIWI_TELEGRAM_CHAT_ID` in `.env` to enable.
 | Variable | Description |
 |----------|-------------|
 | `KIWI_ELEVENLABS_API_KEY` | ElevenLabs API key |
+| `ATLASCLOUD_API_KEY` | Atlas Cloud API key (only used when `KIWI_TTS_PROVIDER=atlas`) |
 | `RUNPOD_API_KEY` | RunPod API key (for Qwen3-TTS serverless) |
 | `RUNPOD_TTS_ENDPOINT_ID` | RunPod endpoint ID |
 | `KIWI_TELEGRAM_BOT_TOKEN` | Telegram bot token (voice security) |
 | `KIWI_TELEGRAM_CHAT_ID` | Telegram chat ID for approval messages |
-| `KIWI_TTS_PROVIDER` | Override TTS provider (`elevenlabs`, `piper`, `qwen3`, `kokoro`) |
+| `KIWI_TTS_PROVIDER` | Override TTS provider (`elevenlabs`, `piper`, `qwen3`, `kokoro`, `atlas`) |
 | `KIWI_WAKE_ENGINE` | Override wake word engine (`text`, `openwakeword`) |
 | `KIWI_WAKE_MODEL` | Override OpenWakeWord model name or path |
 | `KIWI_WAKE_THRESHOLD` | Override OpenWakeWord detection threshold |

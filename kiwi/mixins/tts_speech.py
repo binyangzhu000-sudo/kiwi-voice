@@ -70,6 +70,8 @@ class TTSSpeechMixin:
                 similarity_boost=self.config.tts_elevenlabs_similarity_boost,
                 use_speaker_boost=self.config.tts_elevenlabs_use_speaker_boost,
             )
+        elif self.tts_provider == "atlas":
+            voice = voice or self.config.tts_atlas_voice_id
         elif self.tts_provider != "piper":
             voice = voice or self.config.tts_voice
             kwargs["model_size"] = self.config.tts_model_size
@@ -437,6 +439,13 @@ class TTSSpeechMixin:
                         "TTS",
                         f"ElevenLabs ({self.config.tts_elevenlabs_model_id}, "
                         f"voice={self.config.tts_elevenlabs_voice_id}): '{text[:60]}...' style={style}",
+                        level="INFO",
+                    )
+                elif self.tts_provider == "atlas":
+                    kiwi_log(
+                        "TTS",
+                        f"Atlas Cloud (xai/tts-v1, voice={self.config.tts_atlas_voice_id}): "
+                        f"'{text[:60]}...' style={style}",
                         level="INFO",
                     )
                 elif self.tts_provider == "qwen3" and self.tts_qwen_backend == "local":

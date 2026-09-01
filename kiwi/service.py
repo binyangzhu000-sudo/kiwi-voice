@@ -90,6 +90,7 @@ from kiwi.tts.runpod import TTSClient, TTSConfig
 from kiwi.tts.piper import PiperTTS
 from kiwi.tts.qwen_local import LocalQwenTTSClient, LocalQwenTTSConfig
 from kiwi.tts.elevenlabs import ElevenLabsTTSClient, ElevenLabsTTSConfig
+from kiwi.tts.atlas_cloud import AtlasCloudTTSClient, AtlasCloudTTSConfig
 
 # Kokoro TTS (local, free)
 try:
@@ -294,6 +295,20 @@ class KiwiServiceOpenClaw(
                 "TTS",
                 f"ElevenLabs voice_id: {self.config.tts_elevenlabs_voice_id}, "
                 f"stream endpoint: {self.config.tts_elevenlabs_use_streaming_endpoint}",
+                level="INFO",
+            )
+        elif self.tts_provider == "atlas":
+            atlas_config = AtlasCloudTTSConfig(
+                api_key=self.config.tts_atlas_api_key,
+                voice_id=self.config.tts_atlas_voice_id,
+                timeout=self.config.tts_timeout,
+                poll_interval=self.config.tts_poll_interval,
+            )
+            self.tts = AtlasCloudTTSClient(atlas_config)
+            self.use_local_tts = False
+            kiwi_log(
+                "TTS",
+                f"Initialized Atlas Cloud xAI TTS v1 (voice={self.config.tts_atlas_voice_id})",
                 level="INFO",
             )
         elif self.tts_provider == "qwen3" and self.tts_qwen_backend == "local":

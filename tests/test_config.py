@@ -36,9 +36,18 @@ class TestKiwiConfig:
         assert config is not None
 
     def test_tts_provider_values(self):
-        for provider in ("piper", "elevenlabs", "qwen3", "kokoro"):
+        for provider in ("piper", "elevenlabs", "qwen3", "kokoro", "atlas"):
             config = KiwiConfig.from_yaml({"tts": {"provider": provider}})
             assert config.tts_provider == provider
+
+    def test_atlas_tts_config(self, monkeypatch):
+        monkeypatch.setenv("ATLASCLOUD_API_KEY", "atlas-test-key")
+        config = KiwiConfig.from_yaml({
+            "tts": {"provider": "atlas", "atlas": {"voice_id": "leo"}}
+        })
+        assert config.tts_provider == "atlas"
+        assert config.tts_atlas_api_key == "atlas-test-key"
+        assert config.tts_atlas_voice_id == "leo"
 
     def test_language_config(self):
         config = KiwiConfig.from_yaml({"language": "en"})

@@ -1,6 +1,6 @@
 # TTS Providers
 
-Kiwi supports five text-to-speech providers. Switch between them in `config.yaml` or via environment variable.
+Kiwi supports local and cloud text-to-speech providers. Switch between them in `config.yaml` or via environment variable.
 
 ## Comparison
 
@@ -11,6 +11,25 @@ Kiwi supports five text-to-speech providers. Switch between them in `config.yaml
 | **Qwen3-TTS (RunPod)** | Excellent | ~2–5s | ~$0.0003/sec | No | Many |
 | **Kokoro ONNX** | High | <0.5s | Free | No | 8 |
 | **Piper** | Good | <0.5s | Free | No | 30+ |
+| **Atlas Cloud (xAI TTS v1)** | Excellent | Async | Pay per use | No | 20 |
+
+## Atlas Cloud
+
+Atlas Cloud is an opt-in cloud provider using the live `xai/tts-v1` model. It
+submits each synthesis once, polls only the prediction GET endpoint with a
+bounded backoff, and downloads WAV output for playback.
+
+```yaml
+tts:
+  provider: "atlas"
+  atlas:
+    voice_id: "eve"
+```
+
+```bash
+# .env
+ATLASCLOUD_API_KEY=...
+```
 
 ## Kokoro ONNX
 
@@ -103,7 +122,7 @@ RUNPOD_TTS_ENDPOINT_ID=...
 
 ```yaml
 tts:
-  provider: "kokoro"   # kokoro, piper, qwen3, elevenlabs
+  provider: "kokoro"   # kokoro, piper, qwen3, elevenlabs, atlas
 ```
 
 ### Via environment variable
