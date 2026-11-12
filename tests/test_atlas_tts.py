@@ -90,3 +90,17 @@ def test_paid_submit_is_not_retried(mock_post):
 
     assert (audio, sample_rate) == (None, 0)
     assert mock_post.call_count == 1
+
+
+@patch("kiwi.tts.atlas_cloud.time.monotonic")
+@patch("kiwi.tts.atlas_cloud.time.sleep")
+@patch("kiwi.tts.atlas_cloud.requests.get")
+def test_polling_stops_at_overall_deadline(mock_get, mock_sleep, mock_monotonic):
+    # start=0, first poll at 1s (within budget), second check at 100s (past 90s budget)
+    mock_monotonic.side_effect = [0.0, 1.0, 1.0, 100.0]
+    mock_get.return_value = _response({"code": 200, "data": {"id": "p", "status": "processing"}})
+    client = AtlasCloudTTSClient(AtlasCloudTTSConfig(api_key="atlas-key", poll_interval=0.5))
+
+    assert client._poll_prediction("p") is None
+    assert mock_get.call_count == 1
+    assert mock_get.call_args.kwargs["timeout"] == 60

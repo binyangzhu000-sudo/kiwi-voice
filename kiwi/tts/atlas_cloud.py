@@ -75,6 +75,7 @@ class AtlasCloudTTSConfig:
     timeout: int = 60
     poll_interval: float = 0.5
     max_polls: int = 120
+    poll_deadline: float = 90.0  # overall wall-clock budget for polling, seconds
     cache_size: int = 100
     cache_ttl: int = 3600
 
@@ -131,9 +132,16 @@ class AtlasCloudTTSClient(TTSCacheMixin):
             "User-Agent": _USER_AGENT,
         }
         delay = max(0.0, self.config.poll_interval)
+        deadline = time.monotonic() + self.config.poll_deadline
         for attempt in range(self.config.max_polls):
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                kiwi_log("ATLAS", "Prediction polling exceeded overall deadline", level="ERROR")
+                return None
             try:
-                response = requests.get(url, headers=headers, timeout=self.config.timeout)
+                response = requests.get(
+                    url, headers=headers, timeout=min(self.config.timeout, max(remaining, 1.0))
+                )
                 response.raise_for_status()
                 prediction = self._response_data(response.json())
             except (requests.RequestException, ValueError, RuntimeError) as exc:
@@ -153,7 +161,7 @@ class AtlasCloudTTSClient(TTSCacheMixin):
                     kiwi_log("ATLAS", f"TTS prediction failed: {error}", level="ERROR")
                     return None
             if attempt + 1 < self.config.max_polls:
-                time.sleep(delay)
+                time.sleep(min(delay, max(deadline - time.monotonic(), 0.0)))
                 delay = min(max(delay * 1.5, 0.5), 5.0)
         return None
 
